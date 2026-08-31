@@ -17,11 +17,12 @@ class Service
     public static function create(PDO $pdo, array $data): int
     {
         $stmt = $pdo->prepare(
-            'INSERT INTO service (name, description, price, available) VALUES (?, ?, ?, ?)'
+            'INSERT INTO service (name, description, image, price, available) VALUES (?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['name'],
             $data['description'],
+            $data['image'] ?: null,
             $data['price'],
             $data['available'] ?? 1,
         ]);
@@ -31,11 +32,12 @@ class Service
     public static function update(PDO $pdo, int $id, array $data): void
     {
         $stmt = $pdo->prepare(
-            'UPDATE service SET name = ?, description = ?, price = ?, available = ? WHERE serId = ?'
+            'UPDATE service SET name = ?, description = ?, image = ?, price = ?, available = ? WHERE serId = ?'
         );
         $stmt->execute([
             $data['name'],
             $data['description'],
+            $data['image'] ?: null,
             $data['price'],
             $data['available'] ?? 0,
             $id,

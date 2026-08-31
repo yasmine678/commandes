@@ -1,6 +1,16 @@
 <?php
 require_once BASE_PATH . '/models/Service.php';
 
+/**
+ * Image files available in assets/images/, offered as a picker in the
+ * service form (kept simple: no upload UI yet, just pick from what's there).
+ */
+function admin_available_images(): array
+{
+    $files = glob(BASE_PATH . '/assets/images/*.{jpg,jpeg,png,webp}', GLOB_BRACE) ?: [];
+    return array_map('basename', $files);
+}
+
 function admin_services_index_controller(PDO $pdo): void
 {
     require_admin();
@@ -31,20 +41,23 @@ function admin_service_form_controller(PDO $pdo): void
         redirect('/commandes/admin/services.php');
     }
 
+    $availableImages = admin_available_images();
     $errors = [];
-    $old = $service ?? ['name' => '', 'description' => '', 'price' => '', 'available' => 1];
+    $old = $service ?? ['name' => '', 'description' => '', 'image' => '', 'price' => '', 'available' => 1];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
         $old = [
             'name' => trim($_POST['name'] ?? ''),
             'description' => trim($_POST['description'] ?? ''),
+            'image' => $_POST['image'] ?? '',
             'price' => $_POST['price'] ?? '',
             'available' => isset($_POST['available']) ? 1 : 0,
         ];
 
         if ($old['name'] === '') $errors[] = 'Le nom est obligatoire.';
         if (!is_numeric($old['price']) || (float)$old['price'] < 0) $errors[] = 'Le prix doit être un nombre positif.';
+        if ($old['image'] !== '' && !in_array($old['image'], $availableImages, true)) $errors[] = 'Image invalide.';
 
         if (empty($errors)) {
             if ($id) {
@@ -58,5 +71,11 @@ function admin_service_form_controller(PDO $pdo): void
         }
     }
 
-    render('admin/service_form', ['pageTitle' => $id ? 'Modifier la prestation' : 'Nouvelle prestation', 'errors' => $errors, 'old' => $old, 'id' => $id]);
+    render('admin/service_form', [
+        'pageTitle' => $id ? 'Modifier la prestation' : 'Nouvelle prestation',
+        'errors' => $errors,
+        'old' => $old,
+        'id' => $id,
+        'availableImages' => $availableImages,
+    ]);
 }

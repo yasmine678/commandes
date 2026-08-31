@@ -8,7 +8,6 @@ function login_user(array $user): void
         'firstName' => $user['firstName'],
         'lastName' => $user['lastName'],
         'email' => $user['email'],
-        'institution' => $user['institutionName'],
         'status' => $user['status'],
     ];
 }

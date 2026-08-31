@@ -4,22 +4,14 @@ class User
 {
     public static function findByEmail(PDO $pdo, string $email): ?array
     {
-        $stmt = $pdo->prepare(
-            'SELECT u.*, i.name AS institutionName FROM users u
-             INNER JOIN institution i ON i.insId = u.insId
-             WHERE u.email = ?'
-        );
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
         $stmt->execute([$email]);
         return $stmt->fetch() ?: null;
     }
 
     public static function findById(PDO $pdo, int $id): ?array
     {
-        $stmt = $pdo->prepare(
-            'SELECT u.*, i.name AS institutionName FROM users u
-             INNER JOIN institution i ON i.insId = u.insId
-             WHERE u.usId = ?'
-        );
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE usId = ?');
         $stmt->execute([$id]);
         return $stmt->fetch() ?: null;
     }
@@ -39,13 +31,12 @@ class User
     public static function create(PDO $pdo, array $data): int
     {
         $stmt = $pdo->prepare(
-            'INSERT INTO users (lastName, firstName, insId, email, password, status)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO users (lastName, firstName, email, password, status)
+             VALUES (?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['lastName'],
             $data['firstName'],
-            $data['insId'],
             $data['email'],
             password_hash($data['password'], PASSWORD_DEFAULT),
             $data['status'] ?? 'collaborateur',
@@ -56,9 +47,7 @@ class User
     public static function all(PDO $pdo): array
     {
         return $pdo->query(
-            'SELECT u.usId, u.lastName, u.firstName, u.email, u.status, i.name AS institution
-             FROM users u INNER JOIN institution i ON i.insId = u.insId
-             ORDER BY u.lastName, u.firstName'
+            'SELECT usId, lastName, firstName, email, status FROM users ORDER BY lastName, firstName'
         )->fetchAll();
     }
 

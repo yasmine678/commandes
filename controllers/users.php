@@ -1,6 +1,5 @@
 <?php
 require_once BASE_PATH . '/models/User.php';
-require_once BASE_PATH . '/models/Institution.php';
 
 function login_controller(PDO $pdo): void
 {
@@ -56,12 +55,10 @@ function register_controller(PDO $pdo): void
             // The very first account ever created becomes administrator so the
             // deployment always has at least one admin without manual seeding.
             $status = User::countAdmins($pdo) === 0 ? 'administrateur' : 'collaborateur';
-            $institution = Institution::defaultForSignup($pdo);
 
             $usId = User::create($pdo, [
                 'lastName' => $old['lastName'],
                 'firstName' => $old['firstName'],
-                'insId' => $institution['insId'],
                 'email' => $old['email'],
                 'password' => $password,
                 'status' => $status,

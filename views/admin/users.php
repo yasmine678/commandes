@@ -2,12 +2,11 @@
 
 <div class="card">
 <table>
-    <thead><tr><th>Nom</th><th>Institution</th><th>Email</th><th>Rôle</th><th></th></tr></thead>
+    <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($users as $u): ?>
         <tr>
             <td><?= h($u['firstName'] . ' ' . $u['lastName']) ?></td>
-            <td class="muted"><?= h($u['institution']) ?></td>
             <td class="muted"><?= h($u['email']) ?></td>
             <td><span class="badge badge-<?= $u['status'] === 'administrateur' ? 'publie' : 'brouillon' ?>"><?= h($u['status']) ?></span></td>
             <td class="actions">

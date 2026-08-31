@@ -1,20 +1,22 @@
 -- Schema for ordersdb — fresh install script.
 --
 -- Notes vs. the original phpMyAdmin dump this project started from:
---   - `institution` is now its own table (name + access_code), not a free-text
---     column on `users`. Members register with their institution's access
---     code; admins manage institutions and can regenerate codes.
 --   - users.usId: PRIMARY KEY + AUTO_INCREMENT (was missing entirely)
 --   - users.email: UNIQUE index (needed for login lookup)
 --   - engine switched MyISAM -> InnoDB on all tables (transactions + real FKs)
 --   - added FOREIGN KEY constraints between orders/oderline/menu_service/users
 --     and their parent tables
+--   - `institution` is a simple reference list managed by the admin (Institutions
+--     page). It is NOT tied to user accounts: a collaborator picks which
+--     institution an order is for at order time (orders.institution), since the
+--     same person may order on behalf of different client institutions.
+--   - orders.note holds the collaborator's free-text explanation of what they
+--     actually need, shown alongside the auto-generated line summary
+--     (orders.description).
 --
 -- No seed admin account: the FIRST account ever registered through
 -- /inscription.php is automatically made 'administrateur' (see
--- controllers/users.php). You still need at least one institution to exist
--- before anyone can register — create one directly in this database, e.g.:
---   INSERT INTO institution (name, access_code) VALUES ('Ma Société', 'CHANGEME01');
+-- controllers/users.php).
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -29,32 +31,28 @@ DROP TABLE IF EXISTS `institution`;
 CREATE TABLE `institution` (
   `insId` int NOT NULL AUTO_INCREMENT,
   `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `access_code` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`insId`),
-  UNIQUE KEY `name` (`name`),
-  UNIQUE KEY `access_code` (`access_code`)
+  UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
   `usId` int NOT NULL AUTO_INCREMENT,
   `lastName` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `firstName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `insId` int NOT NULL,
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `status` enum('collaborateur','administrateur') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'collaborateur',
   PRIMARY KEY (`usId`),
-  UNIQUE KEY `email` (`email`),
-  KEY `insId` (`insId`),
-  CONSTRAINT `fk_users_institution` FOREIGN KEY (`insId`) REFERENCES `institution` (`insId`)
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `service` (
   `serId` int NOT NULL AUTO_INCREMENT,
   `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci,
+  `image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price` decimal(10,2) NOT NULL,
   `available` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`serId`)
@@ -88,7 +86,9 @@ CREATE TABLE `orders` (
   `dateLivraison` date NOT NULL,
   `status` enum('en attente','en cours','terminée','annulée','livrée') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'en attente',
   `usId` int NOT NULL,
+  `institution` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `note` text COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`ordId`),
   KEY `usId` (`usId`),
   CONSTRAINT `fk_orders_users` FOREIGN KEY (`usId`) REFERENCES `users` (`usId`) ON DELETE CASCADE

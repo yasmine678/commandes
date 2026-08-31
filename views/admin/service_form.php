@@ -13,8 +13,22 @@
         <label for="description">Description</label>
         <textarea id="description" name="description" rows="3"><?= h($old['description']) ?></textarea>
 
-        <label for="price">Prix (€)</label>
-        <input type="number" id="price" name="price" step="0.01" min="0" required value="<?= h((string)$old['price']) ?>">
+        <label for="price">Prix (FCFA)</label>
+        <input type="number" id="price" name="price" step="1" min="0" required value="<?= h((string)$old['price']) ?>">
+
+        <label>Image</label>
+        <div class="image-picker">
+            <label class="image-option">
+                <input type="radio" name="image" value="" <?= empty($old['image']) ? 'checked' : '' ?>>
+                <span class="image-option-empty">Aucune</span>
+            </label>
+            <?php foreach ($availableImages as $file): ?>
+                <label class="image-option">
+                    <input type="radio" name="image" value="<?= h($file) ?>" <?= $old['image'] === $file ? 'checked' : '' ?>>
+                    <img src="/commandes/assets/images/<?= h($file) ?>" alt="<?= h($file) ?>">
+                </label>
+            <?php endforeach; ?>
+        </div>
 
         <label><input type="checkbox" name="available" style="width:auto;display:inline-block;margin-right:8px" <?= $old['available'] ? 'checked' : '' ?>> Disponible</label>
 

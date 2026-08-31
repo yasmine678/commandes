@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../models/Menu.php';
 require_admin();
 
 $nbUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE status = 'collaborateur'")->fetchColumn();
-$activeMenu = $pdo->query("SELECT * FROM menu WHERE statut = 'publie' ORDER BY date_begg DESC LIMIT 1")->fetch();
+$activeMenu = Menu::latestPublished($pdo);
 $nbInstitutions = (int)$pdo->query("SELECT COUNT(*) FROM institution WHERE active = 1")->fetchColumn();
 
 $orderCounts = array_fill_keys(['en attente', 'en cours', 'terminée', 'livrée', 'annulée'], 0);

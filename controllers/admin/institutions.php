@@ -5,28 +5,16 @@ function admin_institutions_index_controller(PDO $pdo): void
 {
     require_admin();
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
         csrf_verify();
-        $action = $_POST['action'] ?? '';
-        $id = (int)($_POST['insId'] ?? 0);
-
-        if ($action === 'regenerate') {
-            $code = Institution::regenerateCode($pdo, $id);
-            flash('success', "Nouveau code généré : $code");
-        } elseif ($action === 'delete') {
-            if (Institution::memberCount($pdo, $id) > 0) {
-                flash('error', 'Impossible de supprimer : des membres appartiennent encore à cette institution.');
-            } else {
-                Institution::delete($pdo, $id);
-                flash('success', 'Institution supprimée.');
-            }
-        }
+        Institution::delete($pdo, (int)$_POST['insId']);
+        flash('success', 'Institution supprimée.');
         redirect('/commandes/admin/institutions.php');
     }
 
     $institutions = Institution::all($pdo);
     foreach ($institutions as &$institution) {
-        $institution['memberCount'] = Institution::memberCount($pdo, (int)$institution['insId']);
+        $institution['orderCount'] = Institution::orderCount($pdo, $institution['name']);
     }
     unset($institution);
 
@@ -62,9 +50,8 @@ function admin_institution_form_controller(PDO $pdo): void
                 Institution::update($pdo, $id, $old['name'], (bool)$old['active']);
                 flash('success', 'Institution mise à jour.');
             } else {
-                $newId = Institution::create($pdo, $old['name']);
-                $institution = Institution::find($pdo, $newId);
-                flash('success', "Institution créée. Code d'accès : " . $institution['access_code']);
+                Institution::create($pdo, $old['name']);
+                flash('success', 'Institution créée.');
             }
             redirect('/commandes/admin/institutions.php');
         }

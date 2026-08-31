@@ -3,10 +3,17 @@
 
 <div class="card">
 <table>
-    <thead><tr><th>Nom</th><th>Description</th><th>Prix</th><th>Disponible</th><th></th></tr></thead>
+    <thead><tr><th></th><th>Nom</th><th>Description</th><th>Prix</th><th>Disponible</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($services as $service): ?>
         <tr>
+            <td>
+                <?php if ($service['image']): ?>
+                    <img src="/commandes/assets/images/<?= h($service['image']) ?>" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;display:block">
+                <?php else: ?>
+                    <span class="muted">—</span>
+                <?php endif; ?>
+            </td>
             <td><?= h($service['name']) ?></td>
             <td class="muted"><?= h($service['description']) ?></td>
             <td><?= format_price((float)$service['price']) ?></td>
@@ -23,7 +30,7 @@
         </tr>
     <?php endforeach; ?>
     <?php if (empty($services)): ?>
-        <tr><td colspan="5" class="muted">Aucune prestation pour le moment.</td></tr>
+        <tr><td colspan="6" class="muted">Aucune prestation pour le moment.</td></tr>
     <?php endif; ?>
     </tbody>
 </table>

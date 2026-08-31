@@ -15,12 +15,17 @@ class Menu
     }
 
     /**
-     * The most recent published menu (shown to collaborators, whether or not the order window is still open).
+     * The most recent published menu, visible to collaborators from its
+     * opening date/time onward (whether or not the order window is still
+     * open). An admin can mark a menu 'publie' days in advance - it only
+     * actually appears on the site once `date_open` is reached, so a menu
+     * scheduled to open Sunday 00:00 goes live on its own with no manual
+     * action needed that day.
      */
     public static function latestPublished(PDO $pdo): ?array
     {
         $stmt = $pdo->query(
-            "SELECT * FROM menu WHERE statut = 'publie' ORDER BY date_begg DESC LIMIT 1"
+            "SELECT * FROM menu WHERE statut = 'publie' AND date_open <= NOW() ORDER BY date_begg DESC LIMIT 1"
         );
         return $stmt->fetch() ?: null;
     }

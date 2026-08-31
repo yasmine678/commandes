@@ -20,6 +20,7 @@
             <span class="badge badge-<?= h(str_replace(' ', '-', $order['status'])) ?>"><?= h($order['status']) ?></span>
         </h2>
         <p class="muted"><?= h($order['institution']) ?> · commandé le <?= date('d/m/Y H:i', strtotime($order['dateOrder'])) ?></p>
+        <?php if ($order['note']): ?><p>« <?= nl2br(h($order['note'])) ?> »</p><?php endif; ?>
         <table>
             <thead><tr><th>Prestation</th><th>Quantité</th></tr></thead>
             <tbody>

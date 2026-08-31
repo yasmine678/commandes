@@ -17,7 +17,7 @@ class OrderModel
      *
      * @param array $items [serId => quantity]
      */
-    public static function placeOrder(PDO $pdo, int $usId, string $dateLivraison, array $items): int
+    public static function placeOrder(PDO $pdo, int $usId, string $dateLivraison, array $items, string $institution, string $note): int
     {
         $items = array_filter($items, fn($qty) => (int)$qty > 0);
         if (empty($items)) {
@@ -42,15 +42,15 @@ class OrderModel
 
             if ($existing) {
                 $ordId = (int)$existing['ordId'];
-                $upd = $pdo->prepare('UPDATE orders SET description = ?, status = ? WHERE ordId = ?');
-                $upd->execute([$description, 'en attente', $ordId]);
+                $upd = $pdo->prepare('UPDATE orders SET description = ?, institution = ?, note = ?, status = ? WHERE ordId = ?');
+                $upd->execute([$description, $institution, $note, 'en attente', $ordId]);
                 $del = $pdo->prepare('DELETE FROM oderline WHERE ordId = ?');
                 $del->execute([$ordId]);
             } else {
                 $ins = $pdo->prepare(
-                    'INSERT INTO orders (dateLivraison, status, usId, description) VALUES (?, ?, ?, ?)'
+                    'INSERT INTO orders (dateLivraison, status, usId, institution, description, note) VALUES (?, ?, ?, ?, ?, ?)'
                 );
-                $ins->execute([$dateLivraison, 'en attente', $usId, $description]);
+                $ins->execute([$dateLivraison, 'en attente', $usId, $institution, $description, $note]);
                 $ordId = (int)$pdo->lastInsertId();
             }
 
@@ -87,10 +87,9 @@ class OrderModel
 
     public static function listAll(PDO $pdo, ?string $day = null): array
     {
-        $sql = 'SELECT o.*, u.firstName, u.lastName, i.name AS institution
+        $sql = 'SELECT o.*, u.firstName, u.lastName
                 FROM orders o
-                INNER JOIN users u ON u.usId = o.usId
-                INNER JOIN institution i ON i.insId = u.insId';
+                INNER JOIN users u ON u.usId = o.usId';
         $params = [];
         if ($day) {
             $sql .= ' WHERE o.dateLivraison = ?';

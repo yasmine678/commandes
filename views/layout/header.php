@@ -26,11 +26,15 @@ $initials = $currentUser ? mb_strtoupper(mb_substr($currentUser['firstName'] ?? 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= isset($pageTitle) ? h($pageTitle) . ' — ' : '' ?>Commandes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/commandes/assets/vendor/bootstrap/bootstrap.min.css">
 <link rel="stylesheet" href="/commandes/assets/css/style.css?v=<?= filemtime(BASE_PATH . '/assets/css/style.css') ?>">
 </head>
-<body>
+<body class="<?= $isAdminSection ? '' : 'client-theme' ?>">
 <header class="site-header">
-    <div class="container header-inner">
+    <div class="container header-inner d-flex align-items-center justify-content-between flex-wrap gap-2">
         <a class="brand" href="/commandes/index.php">
             <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <rect x="6" y="3" width="12" height="18" rx="2"></rect>
@@ -44,7 +48,7 @@ $initials = $currentUser ? mb_strtoupper(mb_substr($currentUser['firstName'] ?? 
                 <?php if (is_admin()): ?>
                     <a href="/commandes/admin/index.php">Administration</a>
                 <?php else: ?>
-                    <a href="/commandes/menu.php">Menu de la semaine</a>
+                    <a href="/commandes/commander.php">Menu de la semaine</a>
                     <a href="/commandes/mes-commandes.php">Mes commandes</a>
                 <?php endif; ?>
                 <details class="profile-menu">
@@ -65,8 +69,8 @@ $initials = $currentUser ? mb_strtoupper(mb_substr($currentUser['firstName'] ?? 
     </div>
 </header>
 <?php if ($isAdminSection): ?>
-<div class="admin-layout container">
-    <aside class="admin-sidebar">
+<div class="admin-layout container row g-4">
+    <aside class="admin-sidebar col-12 col-lg-3">
         <p class="sidebar-title">Gestion</p>
         <nav class="sidebar-nav">
             <?php foreach ($adminLinks as $file => $link): $active = $adminActivePage === $file; ?>
@@ -78,7 +82,7 @@ $initials = $currentUser ? mb_strtoupper(mb_substr($currentUser['firstName'] ?? 
             <?php endforeach; ?>
         </nav>
     </aside>
-    <main class="admin-content">
+    <main class="admin-content col-12 col-lg-9">
 <?php else: ?>
 <main class="container">
 <?php endif; ?>

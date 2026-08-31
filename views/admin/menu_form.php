@@ -41,7 +41,7 @@ function to_datetime_local(string $value): string
                 <input type="datetime-local" id="date_endin" name="date_endin" required value="<?= h(to_datetime_local($old['date_endin'])) ?>">
             </div>
         </div>
-        <p class="muted" style="margin-top:-8px">Typiquement : ouverture le dimanche, clôture le lundi à 22h00.</p>
+        <p class="muted" style="margin-top:-8px">Typiquement : ouverture le dimanche à 00h00, clôture le lundi à 22h00. Un menu au statut « Publié » ne devient visible pour les collaborateurs qu'à partir de cette date d'ouverture — vous pouvez donc le préparer et le publier à l'avance, il apparaîtra tout seul le moment venu.</p>
 
         <label for="statut">Statut</label>
         <select id="statut" name="statut">

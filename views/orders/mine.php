@@ -9,6 +9,8 @@
                 <?= format_date_fr($order['dateLivraison']) ?>
                 <span class="badge badge-<?= h(str_replace(' ', '-', $order['status'])) ?>"><?= h($order['status']) ?></span>
             </h2>
+            <p class="muted">Pour <?= h($order['institution']) ?></p>
+            <?php if ($order['note']): ?><p>« <?= nl2br(h($order['note'])) ?> »</p><?php endif; ?>
             <table>
                 <thead><tr><th>Prestation</th><th>Quantité</th><th>Prix unitaire</th><th>Sous-total</th></tr></thead>
                 <tbody>

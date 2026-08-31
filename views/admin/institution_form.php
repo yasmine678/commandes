@@ -10,11 +10,7 @@
         <label for="name">Nom de l'institution</label>
         <input type="text" id="name" name="name" required value="<?= h($old['name']) ?>">
 
-        <?php if ($id): ?>
-            <label><input type="checkbox" name="active" style="width:auto;display:inline-block;margin-right:8px" <?= $old['active'] ? 'checked' : '' ?>> Active (autorise les nouvelles inscriptions)</label>
-        <?php else: ?>
-            <p class="muted">Un code d'accès unique sera généré automatiquement à la création.</p>
-        <?php endif; ?>
+        <label><input type="checkbox" name="active" style="width:auto;display:inline-block;margin-right:8px" <?= $old['active'] ? 'checked' : '' ?>> Active (proposée dans la liste au moment de commander)</label>
 
         <button type="submit">Enregistrer</button>
         <a class="btn btn-secondary" href="/commandes/admin/institutions.php">Annuler</a>
