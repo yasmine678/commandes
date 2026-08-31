@@ -13,26 +13,26 @@ class OrderModel
 
     /**
      * Create a new order or replace the lines of an existing (non-cancelled) order
-     * for the same user + delivery day.
+     * for the same user + delivery day. One serving per dish (quantity is
+     * always 1 - a collaborator picks a dish or doesn't, never "x2").
      *
-     * @param array $items [serId => quantity]
+     * @param int[] $serviceIds selected dish IDs
      */
-    public static function placeOrder(PDO $pdo, int $usId, string $dateLivraison, array $items, string $institution, string $note): int
+    public static function placeOrder(PDO $pdo, int $usId, string $dateLivraison, array $serviceIds, string $note): int
     {
-        $items = array_filter($items, fn($qty) => (int)$qty > 0);
-        if (empty($items)) {
-            throw new InvalidArgumentException('Aucune prestation sélectionnée.');
+        $serviceIds = array_values(array_unique(array_map('intval', $serviceIds)));
+        if (empty($serviceIds)) {
+            throw new InvalidArgumentException('Aucun plat sélectionné.');
         }
 
-        $serviceIds = array_map('intval', array_keys($items));
         $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
         $stmt = $pdo->prepare("SELECT serId, name FROM service WHERE serId IN ($placeholders)");
         $stmt->execute($serviceIds);
         $names = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         $descriptionParts = [];
-        foreach ($items as $serId => $qty) {
-            $descriptionParts[] = ($names[$serId] ?? 'Prestation') . ' x' . (int)$qty;
+        foreach ($serviceIds as $serId) {
+            $descriptionParts[] = $names[$serId] ?? 'Plat';
         }
         $description = implode(', ', $descriptionParts);
 
@@ -42,21 +42,21 @@ class OrderModel
 
             if ($existing) {
                 $ordId = (int)$existing['ordId'];
-                $upd = $pdo->prepare('UPDATE orders SET description = ?, institution = ?, note = ?, status = ? WHERE ordId = ?');
-                $upd->execute([$description, $institution, $note, 'en attente', $ordId]);
+                $upd = $pdo->prepare('UPDATE orders SET description = ?, note = ?, status = ? WHERE ordId = ?');
+                $upd->execute([$description, $note, 'en attente', $ordId]);
                 $del = $pdo->prepare('DELETE FROM oderline WHERE ordId = ?');
                 $del->execute([$ordId]);
             } else {
                 $ins = $pdo->prepare(
-                    'INSERT INTO orders (dateLivraison, status, usId, institution, description, note) VALUES (?, ?, ?, ?, ?, ?)'
+                    'INSERT INTO orders (dateLivraison, status, usId, description, note) VALUES (?, ?, ?, ?, ?)'
                 );
-                $ins->execute([$dateLivraison, 'en attente', $usId, $institution, $description, $note]);
+                $ins->execute([$dateLivraison, 'en attente', $usId, $description, $note]);
                 $ordId = (int)$pdo->lastInsertId();
             }
 
-            $insLine = $pdo->prepare('INSERT INTO oderline (quantity, ordId, serId) VALUES (?, ?, ?)');
-            foreach ($items as $serId => $qty) {
-                $insLine->execute([(int)$qty, $ordId, (int)$serId]);
+            $insLine = $pdo->prepare('INSERT INTO oderline (quantity, ordId, serId) VALUES (1, ?, ?)');
+            foreach ($serviceIds as $serId) {
+                $insLine->execute([$ordId, $serId]);
             }
 
             $pdo->commit();
@@ -118,5 +118,43 @@ class OrderModel
     {
         $stmt = $pdo->prepare("UPDATE orders SET status = 'annulée' WHERE ordId = ? AND usId = ?");
         $stmt->execute([$ordId, $usId]);
+    }
+
+    /**
+     * Number of orders placed per ISO week, for the last $weeks weeks
+     * (oldest first). Every week in the range is present even with 0 orders.
+     *
+     * @return array<int, array{label:string, value:int}>
+     */
+    public static function weeklyCounts(PDO $pdo, int $weeks = 8): array
+    {
+        $stmt = $pdo->prepare(
+            "SELECT YEARWEEK(dateOrder, 3) AS yw, MIN(DATE(dateOrder)) AS week_start, COUNT(*) AS c
+             FROM orders
+             WHERE dateOrder >= DATE_SUB(CURDATE(), INTERVAL ? WEEK)
+             GROUP BY yw
+             ORDER BY yw"
+        );
+        $stmt->execute([$weeks]);
+        $rows = $stmt->fetchAll();
+
+        $byWeek = [];
+        foreach ($rows as $row) {
+            $byWeek[(int)$row['yw']] = ['week_start' => $row['week_start'], 'c' => (int)$row['c']];
+        }
+
+        // Fill in every week of the range so a quiet week shows as 0, not a gap.
+        $result = [];
+        $cursor = new DateTime('monday this week');
+        $cursor->modify('-' . ($weeks - 1) . ' weeks');
+        for ($i = 0; $i < $weeks; $i++) {
+            $yw = (int)$cursor->format('oW');
+            $result[] = [
+                'label' => $cursor->format('d/m'),
+                'value' => $byWeek[$yw]['c'] ?? 0,
+            ];
+            $cursor->modify('+1 week');
+        }
+        return $result;
     }
 }

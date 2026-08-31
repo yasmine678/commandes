@@ -9,17 +9,14 @@
                 <?= format_date_fr($order['dateLivraison']) ?>
                 <span class="badge badge-<?= h(str_replace(' ', '-', $order['status'])) ?>"><?= h($order['status']) ?></span>
             </h2>
-            <p class="muted">Pour <?= h($order['institution']) ?></p>
             <?php if ($order['note']): ?><p>« <?= nl2br(h($order['note'])) ?> »</p><?php endif; ?>
             <table>
-                <thead><tr><th>Prestation</th><th>Quantité</th><th>Prix unitaire</th><th>Sous-total</th></tr></thead>
+                <thead><tr><th>Plat</th><th>Prix</th></tr></thead>
                 <tbody>
-                <?php $total = 0; foreach ($order['lines'] as $line): $sub = $line['price'] * $line['quantity']; $total += $sub; ?>
+                <?php $total = 0; foreach ($order['lines'] as $line): $total += $line['price']; ?>
                     <tr>
                         <td><?= h($line['name']) ?></td>
-                        <td><?= (int)$line['quantity'] ?></td>
                         <td><?= format_price((float)$line['price']) ?></td>
-                        <td><?= format_price($sub) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>

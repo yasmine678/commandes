@@ -5,15 +5,13 @@ $currentPage = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $adminLinks = [
     'index.php' => ['label' => 'Tableau de bord', 'icon' => 'dashboard'],
     'menus.php' => ['label' => 'Menus', 'icon' => 'calendar'],
-    'services.php' => ['label' => 'Prestations', 'icon' => 'tag'],
+    'services.php' => ['label' => 'Plats', 'icon' => 'tag'],
     'commandes.php' => ['label' => 'Commandes', 'icon' => 'clipboard'],
     'utilisateurs.php' => ['label' => 'Utilisateurs', 'icon' => 'users'],
-    'institutions.php' => ['label' => 'Institutions', 'icon' => 'building'],
 ];
 $adminActiveOverrides = [
     'menu-form.php' => 'menus.php',
     'service-form.php' => 'services.php',
-    'institution-form.php' => 'institutions.php',
 ];
 $adminActivePage = $adminActiveOverrides[$currentPage] ?? $currentPage;
 
@@ -46,9 +44,9 @@ $initials = $currentUser ? mb_strtoupper(mb_substr($currentUser['firstName'] ?? 
         <nav>
             <?php if (is_logged_in()): ?>
                 <?php if (is_admin()): ?>
-                    <a href="/commandes/admin/index.php">Administration</a>
+                    <!-- <a href="/commandes/admin/index.php">Administration</a> -->
                 <?php else: ?>
-                    <a href="/commandes/commander.php">Menu de la semaine</a>
+                    <a href="/commandes/menu.php">Menu de la semaine</a>
                     <a href="/commandes/mes-commandes.php">Mes commandes</a>
                 <?php endif; ?>
                 <details class="profile-menu">
@@ -69,7 +67,8 @@ $initials = $currentUser ? mb_strtoupper(mb_substr($currentUser['firstName'] ?? 
     </div>
 </header>
 <?php if ($isAdminSection): ?>
-<div class="admin-layout container row g-4">
+<div class="admin-layout container">
+  <div class="row g-4">
     <aside class="admin-sidebar col-12 col-lg-3">
         <p class="sidebar-title">Gestion</p>
         <nav class="sidebar-nav">

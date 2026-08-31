@@ -7,8 +7,17 @@ function admin_orders_index_controller(PDO $pdo): void
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_verify();
-        OrderModel::updateStatus($pdo, (int)$_POST['ordId'], $_POST['status']);
-        flash('success', 'Statut mis à jour.');
+        $ordId = (int)$_POST['ordId'];
+        $order = OrderModel::find($pdo, $ordId);
+
+        if ($order && $order['status'] === 'annulée') {
+            flash('error', 'Cette commande a été annulée par le collaborateur : son statut ne peut plus être modifié.');
+        } elseif (!$order) {
+            flash('error', 'Commande introuvable.');
+        } else {
+            OrderModel::updateStatus($pdo, $ordId, $_POST['status']);
+            flash('success', 'Statut mis à jour.');
+        }
         redirect('/commandes/admin/commandes.php' . (isset($_GET['jour']) ? '?jour=' . urlencode($_GET['jour']) : ''));
     }
 

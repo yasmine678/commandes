@@ -57,5 +57,5 @@ function require_admin(): void
 
 function home_url(): string
 {
-    return is_admin() ? '/commandes/admin/index.php' : '/commandes/menu.php';
+    return is_admin() ? '/commandes/admin/index.php' : '/commandes/index.php';
 }

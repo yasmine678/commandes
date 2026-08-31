@@ -1,6 +1,6 @@
 <div class="auth-wrap">
-    <div class="auth-card">
-        <div class="auth-brand-panel">
+    <div class="auth-card row g-0">
+        <div class="auth-brand-panel col-12 col-md-5">
             <div>
                 <div class="auth-icon-badge">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -11,11 +11,11 @@
                     </svg>
                 </div>
                 <h2>Rejoignez l'équipe</h2>
-                <p>Créez votre compte pour accéder au menu de la semaine et commander vos prestations en quelques clics.</p>
+                <p>Créez votre compte pour accéder au menu de la semaine et commander vos plats en quelques clics.</p>
             </div>
             <div class="auth-foot">DEKA EDITIONS — Outil de commandes en ligne</div>
         </div>
-        <div class="auth-form-panel">
+        <div class="auth-form-panel col-12 col-md-7">
             <h1>Inscription</h1>
             <p class="auth-subtitle">Quelques informations pour créer votre compte.</p>
 
@@ -25,12 +25,12 @@
 
             <form method="post" action="/commandes/inscription.php">
                 <?= csrf_field() ?>
-                <div class="field-row">
-                    <div>
+                <div class="field-row row g-3">
+                    <div class="col-md-6">
                         <label for="firstName">Prénom</label>
                         <input type="text" id="firstName" name="firstName" value="<?= h($old['firstName']) ?>">
                     </div>
-                    <div>
+                    <div class="col-md-6">
                         <label for="lastName">Nom</label>
                         <input type="text" id="lastName" name="lastName" required value="<?= h($old['lastName']) ?>">
                     </div>
@@ -39,12 +39,12 @@
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required value="<?= h($old['email']) ?>">
 
-                <div class="field-row">
-                    <div>
+                <div class="field-row row g-3">
+                    <div class="col-md-6">
                         <label for="password">Mot de passe</label>
                         <input type="password" id="password" name="password" required minlength="8">
                     </div>
-                    <div>
+                    <div class="col-md-6">
                         <label for="password_confirm">Confirmer le mot de passe</label>
                         <input type="password" id="password_confirm" name="password_confirm" required minlength="8">
                     </div>

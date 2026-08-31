@@ -1,5 +1,6 @@
     </main>
 <?php if ($isAdminSection): ?>
+  </div>
 </div>
 <?php endif; ?>
 <footer class="site-footer">

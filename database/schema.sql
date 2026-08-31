@@ -6,10 +6,6 @@
 --   - engine switched MyISAM -> InnoDB on all tables (transactions + real FKs)
 --   - added FOREIGN KEY constraints between orders/oderline/menu_service/users
 --     and their parent tables
---   - `institution` is a simple reference list managed by the admin (Institutions
---     page). It is NOT tied to user accounts: a collaborator picks which
---     institution an order is for at order time (orders.institution), since the
---     same person may order on behalf of different client institutions.
 --   - orders.note holds the collaborator's free-text explanation of what they
 --     actually need, shown alongside the auto-generated line summary
 --     (orders.description).
@@ -26,16 +22,6 @@ DROP TABLE IF EXISTS `orders`;
 DROP TABLE IF EXISTS `menu`;
 DROP TABLE IF EXISTS `service`;
 DROP TABLE IF EXISTS `users`;
-DROP TABLE IF EXISTS `institution`;
-
-CREATE TABLE `institution` (
-  `insId` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`insId`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
   `usId` int NOT NULL AUTO_INCREMENT,
@@ -86,7 +72,6 @@ CREATE TABLE `orders` (
   `dateLivraison` date NOT NULL,
   `status` enum('en attente','en cours','terminée','annulée','livrée') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'en attente',
   `usId` int NOT NULL,
-  `institution` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `note` text COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`ordId`),

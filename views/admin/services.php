@@ -1,5 +1,5 @@
-<h1>Prestations</h1>
-<p><a class="btn" href="/commandes/admin/service-form.php">+ Nouvelle prestation</a></p>
+<h1>Plats</h1>
+<p><a class="btn" href="/commandes/admin/service-form.php">+ Nouveau plat</a></p>
 
 <div class="card">
 <table>
@@ -20,7 +20,7 @@
             <td><?= $service['available'] ? 'Oui' : 'Non' ?></td>
             <td class="actions">
                 <a class="btn btn-small btn-secondary" href="/commandes/admin/service-form.php?id=<?= $service['serId'] ?>">Modifier</a>
-                <form class="inline" method="post" action="/commandes/admin/services.php" onsubmit="return confirm('Supprimer cette prestation ?');">
+                <form class="inline" method="post" action="/commandes/admin/services.php" onsubmit="return confirm('Supprimer ce plat ?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="serId" value="<?= $service['serId'] ?>">
@@ -30,7 +30,7 @@
         </tr>
     <?php endforeach; ?>
     <?php if (empty($services)): ?>
-        <tr><td colspan="6" class="muted">Aucune prestation pour le moment.</td></tr>
+        <tr><td colspan="6" class="muted">Aucun plat pour le moment.</td></tr>
     <?php endif; ?>
     </tbody>
 </table>

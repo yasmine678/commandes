@@ -1,6 +1,6 @@
 <div class="auth-wrap">
-    <div class="auth-card">
-        <div class="auth-brand-panel">
+    <div class="auth-card row g-0">
+        <div class="auth-brand-panel col-12 col-md-5">
             <div>
                 <div class="auth-icon-badge">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -14,7 +14,7 @@
             </div>
             <div class="auth-foot">DEKA EDITIONS — Outil de commandes en ligne</div>
         </div>
-        <div class="auth-form-panel">
+        <div class="auth-form-panel col-12 col-md-7">
             <h1>Connexion</h1>
             <p class="auth-subtitle">Entrez vos identifiants pour accéder à votre espace.</p>
 

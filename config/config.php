@@ -12,6 +12,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 define('BASE_PATH', dirname(__DIR__));
 
+require_once BASE_PATH . '/includes/env.php';
+load_env(BASE_PATH . '/.env');
+
 require_once BASE_PATH . '/config/connexion.php';
 require_once BASE_PATH . '/includes/helpers.php';
 require_once BASE_PATH . '/includes/auth.php';

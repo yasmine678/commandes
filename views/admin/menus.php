@@ -1,5 +1,8 @@
 <h1>Menus</h1>
-<p><a class="btn" href="/commandes/admin/menu-form.php">+ Nouveau menu</a></p>
+<p>
+    <a class="btn" href="/commandes/admin/menu-form.php">+ Nouveau menu</a>
+    <a class="btn btn-secondary" href="/commandes/admin/menu-ocr.php">Importer depuis une photo</a>
+</p>
 
 <div class="card">
 <table>

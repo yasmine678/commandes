@@ -1,8 +1,8 @@
 <?php
-$host = 'localhost';
-$dbname = 'ordersdb';
-$dbuser = 'root';
-$dbpass = '';
+$host = env('DB_HOST', 'localhost');
+$dbname = env('DB_NAME', 'ordersdb');
+$dbuser = env('DB_USER', 'root');
+$dbpass = env('DB_PASS', '');
 
 try {
     $pdo = new PDO(

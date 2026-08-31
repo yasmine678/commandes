@@ -75,12 +75,7 @@ body {
 }
 
 .header-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
     padding: 14px 20px;
-    gap: 12px;
 }
 
 .brand {
@@ -195,15 +190,7 @@ details[open] > .profile-chip .icon { transform: rotate(180deg); }
 
 main { padding: 28px 20px 60px; min-height: 60vh; }
 
-.admin-layout {
-    display: flex;
-    align-items: flex-start;
-    gap: 28px;
-}
-
 .admin-sidebar {
-    width: 210px;
-    flex-shrink: 0;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -259,17 +246,20 @@ main { padding: 28px 20px 60px; min-height: 60vh; }
     margin-left: auto;
 }
 
-.admin-content { flex: 1; min-width: 0; padding-left: 0; padding-right: 0; }
+.admin-content { padding-left: 0; padding-right: 0; }
 
-@media (max-width: 700px) {
-    .admin-layout { flex-direction: column; }
-    .admin-sidebar { width: 100%; position: static; margin-top: 20px; }
+/* Bootstrap's col-12 col-lg-3 already stacks the sidebar above the content
+   below the lg breakpoint (992px) - just drop the sticky positioning there
+   so it doesn't float mid-page while stacked. */
+@media (max-width: 991.98px) {
+    .admin-sidebar { position: static; }
 }
 
 h1 { font-size: 1.6rem; margin-top: 0; }
 h2 { font-size: 1.25rem; }
 
 .card {
+    display: block;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -279,7 +269,7 @@ h2 { font-size: 1.25rem; }
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stat-grid { margin-bottom: 20px; }
 
 .stat-card {
     background: var(--card);
@@ -342,8 +332,6 @@ input:focus, textarea:focus, select:focus {
     box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
 }
 
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
 button, .btn {
     display: inline-block;
     background: var(--primary);
@@ -372,7 +360,7 @@ button:active, .btn:active { transform: translateY(0); }
 .badge-livrée, .badge-terminée { background: var(--success-bg); color: var(--success); }
 .badge-en-cours { background: #e6f0ff; color: #1a4d99; }
 
-.dish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.dish-grid { margin-bottom: 20px; }
 .dish-card {
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -414,7 +402,6 @@ button:active, .btn:active { transform: translateY(0); }
 }
 
 .auth-card {
-    display: flex;
     width: 100%;
     max-width: 880px;
     background: var(--card);
@@ -424,8 +411,6 @@ button:active, .btn:active { transform: translateY(0); }
 }
 
 .auth-brand-panel {
-    flex: 1;
-    min-width: 280px;
     background: linear-gradient(160deg, var(--auth-panel-start) 0%, var(--auth-panel-end) 100%);
     color: #fff;
     padding: 48px 40px;
@@ -467,8 +452,6 @@ button:active, .btn:active { transform: translateY(0); }
 .auth-brand-panel .auth-foot { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); position: relative; }
 
 .auth-form-panel {
-    flex: 1.15;
-    min-width: 300px;
     padding: 48px 44px;
 }
 
@@ -478,10 +461,11 @@ button:active, .btn:active { transform: translateY(0); }
 .auth-form-panel button[type=submit] { width: 100%; padding: 12px 20px; margin-top: 4px; }
 .auth-switch { margin-top: 22px; text-align: center; }
 
-@media (max-width: 720px) {
-    .auth-card { flex-direction: column; border-radius: 16px; }
-    .auth-brand-panel { padding: 32px 28px; }
-    .auth-form-panel { padding: 32px 28px; }
+/* Bootstrap's col-12 col-md-5/7 already stacks the two panels below md
+   (768px) - just tone down the padding and corner radius there. */
+@media (max-width: 767.98px) {
+    .auth-card { border-radius: 16px; }
+    .auth-brand-panel, .auth-form-panel { padding: 32px 28px; }
 }
 
 .hero-banner {
@@ -522,12 +506,70 @@ button:active, .btn:active { transform: translateY(0); }
 .hero-content h1 { font-size: 2.1rem; margin: 0 0 12px; line-height: 1.2; color: #fff; }
 .hero-content p { color: rgba(255, 255, 255, 0.88); font-size: 1rem; margin: 0; max-width: 400px; }
 
-.feature-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
+/* Custom cursor for the hero banner: a small dot (instant) + a trailing ring
+   (lags behind via JS lerp), grows and fills on hover over the CTA (magnetic
+   feel), plus a click ripple. JS only activates this on fine-pointer devices
+   with no reduced-motion preference - see assets/js/hero-cursor.js. Nothing
+   here should ever affect keyboard focus or touch input. */
+.hero-banner.has-custom-cursor,
+.hero-banner.has-custom-cursor a {
+    cursor: none;
 }
+
+.hero-cursor-dot,
+.hero-cursor-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 5;
+}
+
+.hero-cursor-dot {
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    background: #fff;
+    transition: opacity 0.2s ease;
+}
+
+.hero-cursor-ring {
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    transition: opacity 0.2s ease, width 0.25s ease, height 0.25s ease, margin 0.25s ease,
+                background 0.25s ease, border-color 0.25s ease;
+}
+
+.hero-cursor-ring.is-active {
+    width: 68px;
+    height: 68px;
+    margin: -34px 0 0 -34px;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #fff;
+}
+
+.hero-cursor-ripple {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    pointer-events: none;
+    z-index: 4;
+    transform: scale(0);
+    animation: hero-cursor-ripple 0.6s ease-out forwards;
+}
+
+@keyframes hero-cursor-ripple {
+    to { transform: scale(9); opacity: 0; }
+}
+
+.feature-grid { margin-bottom: 30px; }
 
 .feature-card {
     border-radius: 14px;
@@ -544,12 +586,7 @@ button:active, .btn:active { transform: translateY(0); }
 .feature-card h3 { margin: 0 0 6px; font-size: 1.05rem; }
 .feature-card p { margin: 0; color: var(--muted); font-size: 0.85rem; }
 
-.image-picker {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 10px;
-    margin-bottom: 14px;
-}
+.image-picker { margin-bottom: 14px; }
 
 .image-option {
     position: relative;
@@ -577,3 +614,12 @@ button:active, .btn:active { transform: translateY(0); }
 }
 
 .dish-card .dish-image { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+
+.chart-svg { width: 100%; height: auto; display: block; }
+
+.chart-pie-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.chart-pie-figure { flex-shrink: 0; width: 160px; }
+.chart-legend { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 140px; }
+.chart-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text); }
+.chart-legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.chart-legend-value { margin-left: auto; font-weight: 600; color: var(--muted); font-size: 0.8rem; }

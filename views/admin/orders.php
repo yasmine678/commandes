@@ -19,30 +19,34 @@
             <?= format_date_fr($order['dateLivraison']) ?> — <?= h($order['firstName'] . ' ' . $order['lastName']) ?>
             <span class="badge badge-<?= h(str_replace(' ', '-', $order['status'])) ?>"><?= h($order['status']) ?></span>
         </h2>
-        <p class="muted"><?= h($order['institution']) ?> · commandé le <?= date('d/m/Y H:i', strtotime($order['dateOrder'])) ?></p>
+        <p class="muted">Commandé le <?= date('d/m/Y H:i', strtotime($order['dateOrder'])) ?></p>
         <?php if ($order['note']): ?><p>« <?= nl2br(h($order['note'])) ?> »</p><?php endif; ?>
         <table>
-            <thead><tr><th>Prestation</th><th>Quantité</th></tr></thead>
+            <thead><tr><th>Plat</th></tr></thead>
             <tbody>
             <?php foreach ($order['lines'] as $line): ?>
-                <tr><td><?= h($line['name']) ?></td><td><?= (int)$line['quantity'] ?></td></tr>
+                <tr><td><?= h($line['name']) ?></td></tr>
             <?php endforeach; ?>
             </tbody>
         </table>
 
-        <form method="post" action="/commandes/admin/commandes.php<?= $day ? '?jour=' . h($day) : '' ?>" style="display:flex;gap:10px;align-items:end;margin-top:12px">
-            <?= csrf_field() ?>
-            <input type="hidden" name="ordId" value="<?= $order['ordId'] ?>">
-            <div style="flex:1;max-width:220px">
-                <label for="status-<?= $order['ordId'] ?>" style="margin:0 0 6px">Statut</label>
-                <select id="status-<?= $order['ordId'] ?>" name="status" style="margin:0">
-                    <?php foreach ($statuses as $s): ?>
-                        <option value="<?= h($s) ?>" <?= $order['status'] === $s ? 'selected' : '' ?>><?= h($s) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <button type="submit" class="btn-small">Mettre à jour</button>
-        </form>
+        <?php if ($order['status'] === 'annulée'): ?>
+            <p class="muted" style="margin-top:12px">Commande annulée par le collaborateur — statut verrouillé, aucune action possible.</p>
+        <?php else: ?>
+            <form method="post" action="/commandes/admin/commandes.php<?= $day ? '?jour=' . h($day) : '' ?>" style="display:flex;gap:10px;align-items:end;margin-top:12px">
+                <?= csrf_field() ?>
+                <input type="hidden" name="ordId" value="<?= $order['ordId'] ?>">
+                <div style="flex:1;max-width:220px">
+                    <label for="status-<?= $order['ordId'] ?>" style="margin:0 0 6px">Statut</label>
+                    <select id="status-<?= $order['ordId'] ?>" name="status" style="margin:0">
+                        <?php foreach ($statuses as $s): ?>
+                            <option value="<?= h($s) ?>" <?= $order['status'] === $s ? 'selected' : '' ?>><?= h($s) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="submit" class="btn-small">Mettre à jour</button>
+            </form>
+        <?php endif; ?>
     </div>
 <?php endforeach; ?>
 

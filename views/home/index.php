@@ -1,36 +1,12 @@
-<div class="hero-banner" style="background-image:url('/commandes/assets/images/hero-studio.jpg')">
+<div class="hero-banner" style="background-image:linear-gradient(135deg, #a9673a 0%, #7c4a29 100%)">
     <div class="hero-overlay"></div>
     <div class="hero-content">
         <p class="eyebrow">DEKA Editions</p>
         <h1>Le menu de la semaine, préparé pour vous</h1>
-        <p>Choisissez vos prestations et le jour qui vous convient — simple, rapide, sans rendez-vous.</p>
+        <p>Choisissez vos plats et le jour qui vous convient — simple, rapide, sans rendez-vous.</p>
         <p style="margin-top:22px">
-            <a class="btn" href="/commandes/commander.php">Commander maintenant</a>
+            <a class="btn" href="/commandes/menu.php">Commander maintenant</a>
         </p>
-    </div>
-</div>
-
-<div class="feature-grid">
-    <div class="feature-card">
-        <img src="/commandes/assets/images/clapperboard.jpg" alt="Captation & tournage">
-        <div class="feature-body">
-            <h3>Captation & tournage</h3>
-            <p>Prises de vues professionnelles, sur site ou en studio.</p>
-        </div>
-    </div>
-    <div class="feature-card">
-        <img src="/commandes/assets/images/event-coverage.jpg" alt="Couverture d'événements">
-        <div class="feature-body">
-            <h3>Couverture d'événements</h3>
-            <p>Reportage photo et vidéo de vos temps forts.</p>
-        </div>
-    </div>
-    <div class="feature-card">
-        <img src="/commandes/assets/images/editing.jpg" alt="Montage & post-production">
-        <div class="feature-body">
-            <h3>Montage & post-production</h3>
-            <p>Habillage, étalonnage et livraison soignée.</p>
-        </div>
     </div>
 </div>
 
@@ -52,10 +28,12 @@
             </div>
         <?php endif; ?>
 
-        <a class="btn" href="/commandes/commander.php">Voir le menu et commander</a>
+        <a class="btn" href="/commandes/menu.php">Voir le menu et commander</a>
     </div>
 <?php else: ?>
     <div class="card">
         <p>Aucun menu n'est publié pour le moment. Revenez dimanche !</p>
     </div>
 <?php endif; ?>
+
+<script src="/commandes/assets/js/hero-cursor.js" defer></script>
