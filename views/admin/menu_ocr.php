@@ -4,7 +4,6 @@
  * @var string[] $errors
  * @var bool $notInstalled
  * @var array<int, array{name:string, price:int}> $candidates
- * @var string $rawText
  */
 ?>
 <h1><?= h($pageTitle) ?></h1>
@@ -15,13 +14,13 @@
 
 <?php if ($notInstalled): ?>
     <div class="card">
-        <p>L'outil d'analyse d'image (Tesseract OCR) n'est pas installé sur ce serveur.</p>
-        <p class="muted">Installez « Tesseract OCR » pour Windows (build UB Mannheim) avec le pack de langue français, à l'emplacement par défaut <code>C:\Program Files\Tesseract-OCR\</code>, puis revenez sur cette page.</p>
+        <p>L'IA locale d'analyse d'image (Ollama) n'est pas accessible sur ce serveur.</p>
+        <p class="muted">Installez Ollama (<code>curl -fsSL https://ollama.com/install.sh | sh</code>) puis téléchargez le modèle de vision (<code>ollama pull moondream</code>), et revenez sur cette page.</p>
     </div>
 <?php else: ?>
 
 <div class="card" style="max-width:640px">
-    <p class="muted">Importez une photo du menu de la semaine : le texte est extrait automatiquement, puis vous choisissez quels plats créer (nom et prix pré-remplis, modifiables).</p>
+    <p class="muted">Importez une photo du menu de la semaine : une IA locale identifie les plats et leurs prix, puis vous choisissez lesquels créer (nom et prix pré-remplis, modifiables).</p>
     <form method="post" action="/commandes/admin/menu-ocr.php" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <input type="hidden" name="step" value="extract">
@@ -53,11 +52,6 @@
         <?php endforeach; ?>
         <button type="submit">Créer les plats sélectionnés</button>
     </form>
-</div>
-<?php elseif ($rawText !== ''): ?>
-<div class="card" style="max-width:640px">
-    <p class="muted">Texte brut lu sur la photo :</p>
-    <pre style="white-space:pre-wrap"><?= h($rawText) ?></pre>
 </div>
 <?php endif; ?>
 

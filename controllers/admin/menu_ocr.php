@@ -2,87 +2,110 @@
 require_once BASE_PATH . '/models/Service.php';
 
 /**
- * Locates the Tesseract OCR executable. It's a native binary, not a PHP
- * dependency - it must be installed separately with the French language
- * pack: on Windows, the UB Mannheim build
- * (https://github.com/UB-Mannheim/tesseract/wiki), installed at its default
- * path; on Linux, `apt install tesseract-ocr tesseract-ocr-fra`, which puts
- * `tesseract` on the PATH rather than at a fixed location.
+ * This feature reads a menu photo with a small vision model running locally
+ * via Ollama (https://ollama.com) on the same server - self-hosted, free,
+ * no external account or per-request cost. Configurable via .env:
+ * OLLAMA_URL (default http://127.0.0.1:11434) and OLLAMA_VISION_MODEL
+ * (default "moondream", a ~1.7GB model light enough for a small VPS).
  */
-function menu_ocr_binary_path(): ?string
+function menu_ocr_config(): array
 {
-    $candidates = PHP_OS_FAMILY === 'Windows'
-        ? ['C:\\Program Files\\Tesseract-OCR\\tesseract.exe']
-        : ['/usr/bin/tesseract', '/usr/local/bin/tesseract'];
-
-    foreach ($candidates as $path) {
-        if (is_file($path)) {
-            return $path;
-        }
-    }
-
-    // Not at a known fixed location - fall back to PATH lookup (covers most
-    // Linux installs).
-    $found = trim((string)shell_exec(PHP_OS_FAMILY === 'Windows' ? 'where tesseract 2>NUL' : 'command -v tesseract 2>/dev/null'));
-    return $found !== '' ? strtok($found, "\r\n") : null;
+    return [
+        'url' => rtrim(env('OLLAMA_URL', 'http://127.0.0.1:11434'), '/'),
+        'model' => env('OLLAMA_VISION_MODEL', 'moondream'),
+    ];
 }
 
 function menu_ocr_available(): bool
 {
-    return menu_ocr_binary_path() !== null;
+    $config = menu_ocr_config();
+    $ch = curl_init($config['url'] . '/api/tags');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 3,
+    ]);
+    $response = curl_exec($ch);
+    $failed = curl_errno($ch) !== 0;
+    curl_close($ch);
+
+    if ($failed || $response === false) {
+        return false;
+    }
+
+    $data = json_decode($response, true);
+    $models = array_map(fn($m) => explode(':', $m['name'] ?? '')[0], $data['models'] ?? []);
+    return in_array($config['model'], $models, true);
 }
 
 /**
- * Runs Tesseract on an image and returns the raw extracted text, or null if
- * the binary failed or produced nothing.
- */
-function menu_ocr_extract_text(string $imagePath): ?string
-{
-    $tesseract = menu_ocr_binary_path();
-    if ($tesseract === null) {
-        return null;
-    }
-
-    $outputBase = tempnam(sys_get_temp_dir(), 'ocr_');
-    @unlink($outputBase); // tesseract appends ".txt" itself - the base must not exist yet.
-    $cmd = escapeshellarg($tesseract) . ' ' . escapeshellarg($imagePath) . ' ' . escapeshellarg($outputBase) . ' -l fra 2>&1';
-    exec($cmd, $output, $exitCode);
-    $textFile = $outputBase . '.txt';
-    if (!is_file($textFile)) {
-        return null;
-    }
-    $text = file_get_contents($textFile);
-    @unlink($textFile);
-    return $text !== false ? trim($text) : null;
-}
-
-/**
- * Heuristic parse of OCR'd menu text into dish candidates: a line counts as
- * a dish only if it contains a price-looking number, which becomes the
- * price while the rest of the line becomes the name. Lines without a price
- * are dropped rather than guessed at - menu photo layouts vary too much to
- * reliably tell a dish name from a section heading otherwise, and every row
- * that IS kept still goes to the admin for review/editing before anything
- * is saved.
+ * Sends the image to the local vision model and asks it to return the
+ * dishes it can read as JSON directly - no separate text-extraction +
+ * regex-parsing step needed, since the model understands layout well
+ * enough to tell a dish name from a price from a section heading itself.
  *
- * @return array<int, array{name:string, price:int}>
+ * @return array<int, array{name:string, price:int}>|null null on failure
  */
-function menu_ocr_parse_candidates(string $text): array
+function menu_ocr_extract_candidates(string $imagePath): ?array
 {
+    $config = menu_ocr_config();
+    $imageData = @file_get_contents($imagePath);
+    if ($imageData === false) {
+        return null;
+    }
+
+    $prompt = "Voici une photo du menu de la semaine d'un service de restauration en entreprise. "
+        . "Identifie chaque plat visible avec son nom et son prix en FCFA. "
+        . "Réponds UNIQUEMENT avec un tableau JSON de la forme "
+        . '[{"name": "Nom du plat", "price": 1500}]'
+        . ", sans aucun texte autour. Si un plat n'a pas de prix visible, ignore-le.";
+
+    $payload = json_encode([
+        'model' => $config['model'],
+        'prompt' => $prompt,
+        'images' => [base64_encode($imageData)],
+        'format' => 'json',
+        'stream' => false,
+    ]);
+
+    $ch = curl_init($config['url'] . '/api/generate');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        // A small CPU-bound model reading a full photo can take a while -
+        // this runs once, on an admin action, not on a page a visitor waits on.
+        CURLOPT_TIMEOUT => 120,
+    ]);
+    $response = curl_exec($ch);
+    $failed = curl_errno($ch) !== 0;
+    curl_close($ch);
+
+    if ($failed || $response === false) {
+        return null;
+    }
+
+    $data = json_decode($response, true);
+    $text = $data['response'] ?? null;
+    if (!is_string($text)) {
+        return null;
+    }
+
+    // The model sometimes wraps the JSON in a ```json fence despite
+    // instructions - strip that before decoding.
+    $text = trim($text);
+    $text = preg_replace('/^```(?:json)?|```$/m', '', $text);
+    $parsed = json_decode(trim($text), true);
+    if (!is_array($parsed)) {
+        return null;
+    }
+
     $candidates = [];
-    foreach (preg_split('/\r\n|\r|\n/', $text) as $line) {
-        $line = trim($line);
-        if ($line === '' || !preg_match('/\d[\d .,]{1,9}\d|\d{2,}/u', $line, $m)) {
+    foreach ($parsed as $item) {
+        $name = trim((string)($item['name'] ?? ''));
+        $price = (int)($item['price'] ?? 0);
+        if ($name === '' || $price <= 0) {
             continue;
-        }
-        $price = (int)preg_replace('/[^\d]/', '', $m[0]);
-        if ($price <= 0) {
-            continue;
-        }
-        $name = trim(str_replace($m[0], '', $line));
-        $name = trim($name, " \t\n\r\0\x0B-–—:.·");
-        if ($name === '') {
-            $name = $line;
         }
         $candidates[] = ['name' => $name, 'price' => $price];
     }
@@ -99,14 +122,12 @@ function admin_menu_ocr_controller(PDO $pdo): void
             'errors' => [],
             'notInstalled' => true,
             'candidates' => [],
-            'rawText' => '',
         ]);
         return;
     }
 
     $errors = [];
     $candidates = [];
-    $rawText = '';
     $step = $_POST['step'] ?? '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'extract') {
@@ -122,14 +143,12 @@ function admin_menu_ocr_controller(PDO $pdo): void
         } elseif (!@getimagesize($file['tmp_name'])) {
             $errors[] = "Le fichier envoyé n'est pas une image valide.";
         } else {
-            $rawText = menu_ocr_extract_text($file['tmp_name']) ?? '';
-            if ($rawText === '') {
-                $errors[] = "Impossible de lire du texte sur cette photo. Essayez une photo plus nette ou mieux cadrée.";
-            } else {
-                $candidates = menu_ocr_parse_candidates($rawText);
-                if (empty($candidates)) {
-                    $errors[] = "Aucun prix n'a été reconnu sur cette photo - le texte brut lu est affiché ci-dessous.";
-                }
+            $candidates = menu_ocr_extract_candidates($file['tmp_name']);
+            if ($candidates === null) {
+                $errors[] = "L'analyse de la photo a échoué. Réessayez, ou avec une photo plus nette.";
+                $candidates = [];
+            } elseif (empty($candidates)) {
+                $errors[] = "Aucun plat avec un prix n'a été reconnu sur cette photo.";
             }
         }
     }
@@ -171,6 +190,5 @@ function admin_menu_ocr_controller(PDO $pdo): void
         'errors' => $errors,
         'notInstalled' => false,
         'candidates' => $candidates,
-        'rawText' => $rawText,
     ]);
 }
