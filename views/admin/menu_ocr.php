@@ -20,7 +20,7 @@
 <?php else: ?>
 
 <div class="card" style="max-width:640px">
-    <p class="muted">Importez une photo du menu de la semaine : une IA locale identifie les plats et leurs prix, puis vous choisissez lesquels créer (nom et prix pré-remplis, modifiables).</p>
+    <p class="muted">Importez une photo du menu de la semaine : une IA locale identifie les noms des plats, puis vous choisissez lesquels créer et renseignez leur prix (les menus n'ayant pas de prix par plat, ce champ n'est pas pré-rempli).</p>
     <form method="post" action="/commandes/admin/menu-ocr.php" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <input type="hidden" name="step" value="extract">
@@ -46,7 +46,7 @@
                     <input type="text" name="name[<?= $i ?>]" value="<?= h($c['name']) ?>" style="margin:0">
                 </div>
                 <div class="col-4">
-                    <input type="number" name="price[<?= $i ?>]" value="<?= (int)$c['price'] ?>" min="0" step="1" style="margin:0">
+                    <input type="number" name="price[<?= $i ?>]" placeholder="Prix FCFA" min="1" step="1" required style="margin:0">
                 </div>
             </div>
         <?php endforeach; ?>

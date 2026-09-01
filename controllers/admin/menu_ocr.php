@@ -6,13 +6,15 @@ require_once BASE_PATH . '/models/Service.php';
  * via Ollama (https://ollama.com) on the same server - self-hosted, free,
  * no external account or per-request cost. Configurable via .env:
  * OLLAMA_URL (default http://127.0.0.1:11434) and OLLAMA_VISION_MODEL
- * (default "moondream", a ~1.7GB model light enough for a small VPS).
+ * (default "qwen2.5vl:3b" - the smaller "moondream" model was tried first
+ * but proved too weak to follow the extraction instructions reliably,
+ * falling into repetition loops instead of returning valid dish names).
  */
 function menu_ocr_config(): array
 {
     return [
         'url' => rtrim(env('OLLAMA_URL', 'http://127.0.0.1:11434'), '/'),
-        'model' => env('OLLAMA_VISION_MODEL', 'moondream'),
+        'model' => env('OLLAMA_VISION_MODEL', 'qwen2.5vl:3b'),
     ];
 }
 
@@ -33,15 +35,26 @@ function menu_ocr_available(): bool
     }
 
     $data = json_decode($response, true);
-    $models = array_map(fn($m) => explode(':', $m['name'] ?? '')[0], $data['models'] ?? []);
-    return in_array($config['model'], $models, true);
+    foreach ($data['models'] ?? [] as $m) {
+        $installedName = $m['name'] ?? '';
+        // Matches whether OLLAMA_VISION_MODEL is set with a tag ("qwen2.5vl:3b")
+        // or without one ("qwen2.5vl", matching any tag of that model).
+        if ($installedName === $config['model'] || explode(':', $installedName)[0] === $config['model']) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
- * Sends the image to the local vision model and asks it to return the
- * dishes it can read as JSON directly - no separate text-extraction +
- * regex-parsing step needed, since the model understands layout well
- * enough to tell a dish name from a price from a section heading itself.
+ * Sends the image to the local vision model and asks it to return the dish
+ * names it can read, as JSON. Price is deliberately NOT asked for: these
+ * menus price by portion size (e.g. "1500f / 2000f" once for the whole
+ * week), never per dish, so there is no per-dish price to extract - the
+ * admin fills that in by hand when reviewing the candidates. Asking only
+ * for names also keeps the task within reach of a small (1B-2B) local
+ * model: the same model asked for a structured name+price JSON in testing
+ * fell into a degenerate repetition loop instead of producing valid JSON.
  *
  * @return array<int, array{name:string, price:int}>|null null on failure
  */
@@ -54,10 +67,9 @@ function menu_ocr_extract_candidates(string $imagePath): ?array
     }
 
     $prompt = "Voici une photo du menu de la semaine d'un service de restauration en entreprise. "
-        . "Identifie chaque plat visible avec son nom et son prix en FCFA. "
-        . "Réponds UNIQUEMENT avec un tableau JSON de la forme "
-        . '[{"name": "Nom du plat", "price": 1500}]'
-        . ", sans aucun texte autour. Si un plat n'a pas de prix visible, ignore-le.";
+        . "Identifie le nom de chaque plat visible sur cette photo (un plat par jour en général). "
+        . 'Réponds UNIQUEMENT avec un tableau JSON de la forme ["Nom du plat 1", "Nom du plat 2"]'
+        . ', sans aucun texte autour.';
 
     $payload = json_encode([
         'model' => $config['model'],
@@ -65,7 +77,17 @@ function menu_ocr_extract_candidates(string $imagePath): ?array
         'images' => [base64_encode($imageData)],
         'format' => 'json',
         'stream' => false,
+        // Caps how long a stuck/repeating model can run for - a real menu
+        // has a handful of dishes, so a bounded list is plenty, and this
+        // keeps a bad response fast to detect instead of a multi-minute hang.
+        'options' => ['num_predict' => 500],
     ]);
+
+    // A small CPU-bound model reading a busy photo can take a while - this
+    // runs once, on an admin action, not on a page a visitor waits on. PHP's
+    // own script timeout must be raised too, or it kills the request before
+    // curl's does.
+    set_time_limit(180);
 
     $ch = curl_init($config['url'] . '/api/generate');
     curl_setopt_array($ch, [
@@ -73,9 +95,7 @@ function menu_ocr_extract_candidates(string $imagePath): ?array
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $payload,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        // A small CPU-bound model reading a full photo can take a while -
-        // this runs once, on an admin action, not on a page a visitor waits on.
-        CURLOPT_TIMEOUT => 120,
+        CURLOPT_TIMEOUT => 170,
     ]);
     $response = curl_exec($ch);
     $failed = curl_errno($ch) !== 0;
@@ -100,16 +120,43 @@ function menu_ocr_extract_candidates(string $imagePath): ?array
         return null;
     }
 
+    $names = [];
+    menu_ocr_collect_dish_names($parsed, $names);
+
     $candidates = [];
-    foreach ($parsed as $item) {
-        $name = trim((string)($item['name'] ?? ''));
-        $price = (int)($item['price'] ?? 0);
-        if ($name === '' || $price <= 0) {
-            continue;
-        }
-        $candidates[] = ['name' => $name, 'price' => $price];
+    foreach (array_unique($names) as $name) {
+        $candidates[] = ['name' => $name, 'price' => 0];
     }
     return $candidates;
+}
+
+/**
+ * The model is asked for a flat array of dish names, but a small local
+ * model doesn't always follow the requested shape exactly - it may nest
+ * dishes under a day name instead (e.g. {"Lundi": ["Plat A", "Plat B"]}),
+ * or wrap a single name in a {"name": "..."} object. Rather than reject
+ * those shapes, walk whatever JSON structure came back and collect every
+ * string value found - the day grouping isn't used downstream anyway,
+ * since the admin still assigns dishes to specific days separately when
+ * building the week's menu.
+ *
+ * @param mixed $node
+ * @param string[] $out
+ */
+function menu_ocr_collect_dish_names($node, array &$out): void
+{
+    if (is_string($node)) {
+        $name = trim($node);
+        if ($name !== '') {
+            $out[] = $name;
+        }
+        return;
+    }
+    if (is_array($node)) {
+        foreach ($node as $child) {
+            menu_ocr_collect_dish_names($child, $out);
+        }
+    }
 }
 
 function admin_menu_ocr_controller(PDO $pdo): void
